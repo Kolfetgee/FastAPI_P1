@@ -1,13 +1,13 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
-    username: str
+    username: str = Field(min_length=3, max_length=12)
     email: EmailStr
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=6, max_length=50)
 
 
 class UserRead(UserBase):
@@ -15,6 +15,6 @@ class UserRead(UserBase):
 
 
 class UserUpdate(BaseModel):
-    username: str | None = None
+    username: str | None = Field(default=None, min_length=3, max_length=12)
     email: EmailStr | None = None
-    password: str | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=50)
