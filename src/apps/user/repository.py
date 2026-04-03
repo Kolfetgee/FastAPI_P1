@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 from src.apps.user.schemas import UserRead, UserCreate, UserUpdate
 from src.utils.store import get_store
 
@@ -10,13 +12,25 @@ class UserRepository:
             if user_data is None:
                 return None
 
-            return UserRead(**user_data)
+            return UserRead(
+                id=user_data["id"],
+                username=user_data["username"],
+                email=user_data["email"]
+            )
+
+
     def get_all(self) -> list[UserRead]:
         with get_store() as store:
             users = []
 
             for user_data in store.users.values():
-                users.append(UserRead(**user_data))
+                users.append(
+                    UserRead(
+                        id=user_data["id"],
+                        username=user_data["username"],
+                        email=user_data["email"]
+                    )
+                )
 
             return users
 
@@ -52,7 +66,7 @@ class UserRepository:
                 email=user_data["email"]
             )
 
-    def delete(self,user_id: int)-> UserRead | None:
+    def delete(self, user_id: int) -> UserRead | None:
         with get_store() as store:
             deleted_user_data = store.users.pop(user_id, None)
             if deleted_user_data is None:
@@ -62,6 +76,7 @@ class UserRepository:
                 username=deleted_user_data["username"],
                 email=deleted_user_data["email"]
             )
+
     def get_by_ids(self, user_ids: list[int]) -> list[UserRead]:
         with get_store() as store:
             found_users = []
@@ -77,3 +92,29 @@ class UserRepository:
                     )
 
             return found_users
+
+
+
+    def create_many(self, users_in: list[UserCreate]) -> list[UserRead]:
+        with get_store() as store:
+            created_users = []
+            for user_in in users_in:
+                new_id = max(store.users.keys(), default=0) + 1
+                new_user = {
+                    "id": new_id,
+                    "username": user_in.username,
+                    "email": user_in.email,
+                    "password": user_in.password
+                }
+
+                store.users[new_id] = new_user
+
+                created_users.append(
+                    UserRead(
+                        id=new_user["id"],
+                        username=new_user["username"],
+                        email=new_user["email"]
+                    )
+                )
+
+            return created_users
