@@ -1,4 +1,3 @@
-from typing import Dict, Any
 
 from src.apps.user.schemas import UserRead, UserCreate, UserUpdate
 from src.utils.store import get_store
@@ -95,6 +94,7 @@ class UserRepository:
 
 
 
+
     def create_many(self, users_in: list[UserCreate]) -> list[UserRead]:
         with get_store() as store:
             created_users = []
@@ -118,3 +118,15 @@ class UserRepository:
                 )
 
             return created_users
+
+    def get_by_email(self, user_email: str) -> UserRead | None:
+        with get_store() as store:
+            for user_data in store.users.values():
+                if user_data["email"] == user_email:
+                    return UserRead(
+                        id=user_data["id"],
+                        username=user_data["username"],
+                        email=user_data["email"]
+                    )
+            return None
+

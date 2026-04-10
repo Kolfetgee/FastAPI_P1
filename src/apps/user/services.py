@@ -16,7 +16,10 @@ class UserService:
     def get_users_by_ids(self, user_ids: list[int]) -> list[UserRead]:
         return self.repository.get_by_ids(user_ids)
 
-    def create_user(self, user_create: UserCreate) -> UserRead:
+    def create_user(self, user_create: UserCreate) -> UserRead | None:
+        existing_user = self.repository.get_by_email(user_create.email)
+        if existing_user is not None:
+            return None
         return self.repository.create(user_create)
 
     def create_many_users(self, users_in: list[UserCreate]) -> list[UserRead]:
