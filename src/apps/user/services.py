@@ -1,6 +1,7 @@
 from src.apps.user.repository import UserRepository
 
 from src.apps.user.schemas import UserRead, UserCreate, UserUpdate
+from src.apps.auth.schemas import AuthUserData
 
 
 class UserService:
@@ -16,6 +17,9 @@ class UserService:
     def get_users_by_ids(self, user_ids: list[int]) -> list[UserRead]:
         return self.repository.get_by_ids(user_ids)
 
+    def get_auth_user_by_email(self, email: str) -> AuthUserData | None:
+        return self.repository.get_auth_user_by_email(email)
+
     def create_user(self, user_create: UserCreate) -> UserRead | None:
         existing_user = self.repository.get_by_email(user_create.email)
         if existing_user is not None:
@@ -30,6 +34,7 @@ class UserService:
 
     def delete_user(self, user_id: int) -> UserRead | None:
         return self.repository.delete(user_id)
+
 
 
 

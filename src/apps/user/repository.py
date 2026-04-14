@@ -1,7 +1,7 @@
 
 from src.apps.user.schemas import UserRead, UserCreate, UserUpdate
 from src.utils.store import get_store
-
+from src.apps.auth.schemas import AuthUserData
 
 class UserRepository:
     def get_by_id(self, user_id: int) -> UserRead | None:
@@ -16,6 +16,18 @@ class UserRepository:
                 username=user_data["username"],
                 email=user_data["email"]
             )
+
+    def get_auth_user_by_email(self, email: str) -> AuthUserData | None:
+        with get_store() as store:
+            for user_data in store.users.values():
+                if user_data["email"] == email:
+                    return AuthUserData(
+                        id=user_data["id"],
+                        username=user_data["username"],
+                        email=user_data["email"],
+                        password=user_data["password"]
+                    )
+            return None
 
 
     def get_all(self) -> list[UserRead]:
