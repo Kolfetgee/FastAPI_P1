@@ -249,3 +249,110 @@ def test_middleware_auth_flow(client: TestClient) -> None:
     response = client.get("/auth/me-middleware", headers=auth_headers(tokens["refresh_token"]))
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid token type"}
+
+
+def test_get_nonexistent_user_returns_404(client: TestClient) -> None:
+    response = client.get("/users/999")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "User not found"}
+
+
+def test_update_nonexistent_user_returns_404(client: TestClient) -> None:
+    response = client.put(
+        "/users/999",
+        json={"email": "missing@example.com"},
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "User not found"}
+
+
+def test_delete_nonexistent_user_returns_404(client: TestClient) -> None:
+    response = client.delete("/users/999")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "User not found"}
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "username": "ab",  # слишком короткий username
+            "email": "john@example.com",
+            "password": "123456",
+        },
+        {
+            "username": "john",
+            "email": "not-an-email",  # невалидный email
+            "password": "123456",
+        },
+        {
+            "username": "john",
+            "email": "john@example.com",
+            "password": "123",  # слишком короткий password
+        },
+    ],
+)
+def test_create_user_validation_errors(client: TestClient, payload: dict) -> None:
+    response = client.post("/users/", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "username": "ab",
+            "email": "alice@example.com",
+            "password": "123456",
+        },
+        {
+            "username": "alice",
+            "email": "wrong-email",
+            "password": "123456",
+        },
+        {
+            "username": "alice",
+            "email": "alice@example.com",
+            "password": "123",
+        },
+    ],
+)
+def test_auth_register_validation_errors(client: TestClient, payload: dict) -> None:
+    response = client.post("/auth/register", json=payload)
+    assert response.status_code == 422
+
+
+def test_auth_login_validation_error_for_bad_email_shape(client: TestClient) -> None:
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "not-an-email",
+            "password": "123456",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_refresh_validation_error_when_field_missing(client: TestClient) -> None:
+    response = client.post("/auth/refresh", json={})
+    assert response.status_code == 422
+
+
+def test_middleware_rejects_invalid_authorization_header(client: TestClient) -> None:
+    register_user(client)
+    login_response = login_user(client)
+    assert login_response.status_code == 200
+
+    response = client.get(
+        "/auth/me-middleware",
+        headers={"Authorization": "Basic abc123"},
+    )
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Invalid authorization header"}
+
+    response = client.get(
+        "/auth/me-middleware",
+        headers={"Authorization": "Bearer"},
+    )
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Invalid authorization header"}
