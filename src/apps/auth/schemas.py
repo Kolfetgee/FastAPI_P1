@@ -12,6 +12,10 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=6, max_length=10)
 
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
